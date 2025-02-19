@@ -1,0 +1,23 @@
+{
+  "name": "delta",
+  "version": "1.0.0",
+  "description": "yes the best chat app ever for real",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MagmaMonst/Delta.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MagmaMonst/Delta/issues"
+  },
+  "homepage": "https://github.com/MagmaMonst/Delta#readme",
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}
