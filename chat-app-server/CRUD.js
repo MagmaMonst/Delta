@@ -1,4 +1,4 @@
-import { addDoc, getDocs, collection } from "firebase/firestore";
+import { addDoc, getDocs, collection, updateDoc, deleteDoc, doc } from "firebase/firestore";
 
 export async function create(db, collectionName, document) {
     try {
@@ -16,4 +16,24 @@ export async function readAll(db, collectionName) {
         console.log(`${doc.id} => ${doc.data()}`);
     });
     return querySnapshot;
+}
+
+export async function update(docRef, newData) {
+    try {
+        await updateDoc(docRef, newData);
+        console.log("Message updated: ", docRef.id);
+    } catch (e) {
+        console.error("Error updating the message: ", error);
+        throw error;
+    }
+}
+
+export async function deleteMessage(docRef) {
+    try {
+        await deleteDoc(docRef);
+        console.log("Message deleted: ", docRef.id);
+    } catch (e) {
+        console.error("Error deleting message: ", error);
+        throw error;
+    }
 }
