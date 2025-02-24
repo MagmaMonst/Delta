@@ -5,7 +5,9 @@ import { createServer as HTTP_createServer } from "node:http";
 import dotenv from "dotenv";
 import { initializeApp as f_initializeApp } from "firebase/app";
 import { getFirestore as f_getFirestore } from "firebase/firestore";
-import { addUser } from "./User.js";
+import { addUser, validateUser } from "./User.js";
+import jwt from "jsonwebtoken";
+import {generateToken} from "./auth";
 
 dotenv.config();
 const firebaseConfig = {
@@ -36,13 +38,27 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-app.post("/createuser", (req, res) => {
+app.post("/createuser", async (req, res) => {
 	// add username and hashed password to database
+	await addUser(db, req.body.username, req.body.password);
 });
 
-app.post("/authenticateuser", (req, res) => {
+app.post("/authenticateuser", async (req, res) => {
 	// check if user has provided correct credentials from database
+	const username = req.body.username;
+	const password = req.body.password;
+	const isValid = await validateUser(db, username, password);
 	// if yes, provide an authentication token thingy (JWT)
+	if (isValid) {
+		const data = {
+			time: Date.now(),
+			username: username,
+		};
+		const token = jwt.sign(data, process.env.JWT_SECRET_KEY);
+		res.send(token);
+	} else {
+		res.status(401).json("Error: invalid username or password");
+	}
 });
 
 app.get("/secureendpoint", (req, res) => {
