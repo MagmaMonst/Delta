@@ -24,7 +24,7 @@ const db = f_getFirestore(firebaseApp);
 
 
 addUser(db, "user-8", "weakpassword").then((userDocRef) => {
-	console.log(userDocRef);
+	console.log(userDocRef.data());
 });
 
 const app = express();
