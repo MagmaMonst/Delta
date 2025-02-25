@@ -6,7 +6,7 @@ import { createServer as HTTP_createServer } from "node:http";
 import dotenv from "dotenv";
 import { initializeApp as f_initializeApp } from "firebase/app";
 import { getFirestore as f_getFirestore } from "firebase/firestore";
-import { addUser, validateUser } from "./User.js";
+import { addUser, validateUser, getUser, getUserDocRef } from "./User.js";
 import jwt from "jsonwebtoken";
 
 dotenv.config();
@@ -72,9 +72,41 @@ app.post("/authenticateuser", async (req, res) => {
 	}
 });
 
-app.get("/secureendpoint", (req, res) => {
+app.get("/secureendpoint", async (req, res) => {
 	// validate the token
+	try {
+		const token = req.header(process.env.TOKEN_HEADER_KEY);
+		const verified = jwt.verify(token, process.env.JWT_SECRET_KEY);
+		if (verified) {
+			res.send("Successfully verified");
+		} else {
+			res.status(401).send("Access denied:", error);
+		}
+	} catch (error) {
+		res.status(401).send(error);
+	}
 	// if it is valid, send data
+	try {
+	if (verified) {
+		const userID = verified.userID;
+		const user = await getUser(getUserDocRef(db, username));
+		if (user) {
+			res.status(200).json({
+				message: "successfully verified",
+				user: {
+					id: user.id,
+					name: user.name,
+				},
+			});
+		} else {
+			res.status(404).send("user not found");
+		} 
+	} else {
+		res.status(401).send("access denied");
+	}
+	} catch (error) {
+		res.status(401).send("access denied: ", error);
+	}
 });
 
 app.listen(3000, () => {
