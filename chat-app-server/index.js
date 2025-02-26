@@ -40,10 +40,10 @@ app.post("/createuser", async (req, res) => {
 	// add username and hashed password to database
 	if (req.body && req.body.username && req.body.password) {
 		let { added, msg } = await addUser(db, req.body.username, req.body.password);
-		if(added) {
-			res.status(200).send({added: true, msg: msg});
+		if (added) {
+			res.status(200).send({ added: true, msg: msg });
 		} else {
-			res.status(400).send({added: false, msg: msg});
+			res.status(400).send({ added: false, msg: msg });
 		}
 	} else {
 		res.status(400).json({ added: false, msg: "Invalid request, please provide username and password fields in request body" });
@@ -51,10 +51,11 @@ app.post("/createuser", async (req, res) => {
 });
 
 app.post("/authenticateuser", async (req, res) => {
-	if (req.body && req.body.username && req.body.password){
+	if (req.body && req.body.username && req.body.password) {
 		// check if user has provided correct credentials from database
 		const username = req.body.username;
 		const password = req.body.password;
+		console.log(username);
 		const { valid, msg } = await validateUser(db, username, password);
 		// if yes, provide an authentication token thingy (JWT)
 		if (valid) {
@@ -72,40 +73,29 @@ app.post("/authenticateuser", async (req, res) => {
 	}
 });
 
+const tokenMaxLifespan = 1000 * 60 * 60 * 24 * 30; // 30 days
+
 app.get("/secureendpoint", async (req, res) => {
 	// validate the token
+	const token = req.headers.jwt;
 	try {
-		const token = req.header(process.env.TOKEN_HEADER_KEY);
 		const verified = jwt.verify(token, process.env.JWT_SECRET_KEY);
-		if (verified) {
-			res.send("Successfully verified");
+		if(verified.username && verified.time) {
+			const tokenLife = Date.now() - verified.time;
+			if(tokenLife < 0) {
+				res.status(401).json({authorized: false, msg: "It appears you are a time traveller. The server sends its deepest apologies, but it lacks the ability to cater to your needs. Sorry!"});
+			} else if(tokenLife > tokenMaxLifespan) {
+				res.status(401).json({authorized: false, msg: "Token expired, sorry. Sign in again to get a new one"});
+			} else {
+				const userID = verified.userID;
+				const user = await getUser(getUserDocRef(db, verified.username));
+				res.status(200).json({authorized: true, msg: `Congrats! You, ${user.username}, are authorized to recieve data...if only we had any data for you. But we do know your password hash is ${user.password}`});
+			}
 		} else {
-			res.status(401).send("Access denied:", error);
+			res.status(401).json({authorized: false, msg: "Invalid token sent. Try signing in again."});
 		}
-	} catch (error) {
-		res.status(401).send(error);
-	}
-	// if it is valid, send data
-	try {
-	if (verified) {
-		const userID = verified.userID;
-		const user = await getUser(getUserDocRef(db, username));
-		if (user) {
-			res.status(200).json({
-				message: "successfully verified",
-				user: {
-					id: user.id,
-					name: user.name,
-				},
-			});
-		} else {
-			res.status(404).send("user not found");
-		} 
-	} else {
-		res.status(401).send("access denied");
-	}
-	} catch (error) {
-		res.status(401).send("access denied: ", error);
+	} catch (e) {
+		res.status(401).json({authorized: false, msg: "ERROR: " + e}); // token is wrong?
 	}
 });
 
