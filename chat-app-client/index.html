@@ -1,13 +1,22 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Totally the best chat app ever!</title>
+    <link rel="stylesheet" href="src/App.css">
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <div class="chat-box">
+      <div class="message-display">
+        <div class="message user" >test for messages sent by user</div>
+        <div class="message">test for messages sent by others</div>
+      </div>
+      <div class="input-background">
+        <input type="text" class="message-input" placeholder="Type a message here">
+        <button class="send">-></button>
+      </div>
+    </div>
+    <script type="module" src="src/main.jsx"></script>
   </body>
 </html>
