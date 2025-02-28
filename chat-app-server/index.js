@@ -25,15 +25,16 @@ const db = f_getFirestore(firebaseApp);
 
 const app = express();
 const server = HTTP_createServer(app);
-const io = new socketIO_Server(server);
+const io = new socketIO_Server(server, {cors: {origin:"*"}});
+
+const corsOptions = {
+	origin: ["http://localhost:5173"],
+	methods: ["GET", "POST"]
+};
 
 // for processing bodies in http requests
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
-const corsOptions = {
-	origin: ["http://localhost:5173"]
-};
 app.use(cors(corsOptions));
 
 const tokenMaxLifespan = 1000 * 60 * 60 * 24 * 30; // 30 days
@@ -247,6 +248,6 @@ io.on("connection", (socket) => {
 	});
 });
 
-app.listen(3000, () => {
+server.listen(3000, () => {
 	console.log("server running at http://localhost:3000");
 });
