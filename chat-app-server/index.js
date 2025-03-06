@@ -25,7 +25,7 @@ const db = f_getFirestore(firebaseApp);
 
 const app = express();
 const server = HTTP_createServer(app);
-const io = new socketIO_Server(server, {cors: {origin:"*"}});
+const io = new socketIO_Server(server, { cors: { origin: "*" } });
 
 const corsOptions = {
 	origin: ["http://localhost:5173"],
@@ -81,9 +81,7 @@ function isUserOnline(username) {
 	return onlineUserSockets[username] !== undefined;
 }
 function notifyUserToUpdate(username) {
-	if (isUserOnline(username)) {
-		onlineUserSockets[username].emit("update");
-	}
+	onlineUserSockets[username].emit("update");
 }
 
 function isAlphanumericWithUnderscore(str) {
@@ -207,11 +205,11 @@ app.post("/acceptjoinrequest", async (req, res) => {
 			const username = parsedToken.username;
 			const roomRef = getRoomRef(db, roomID);
 			const acceptStatus = await acceptRoomAddRequest(db, username, roomRef);
-			if(!acceptStatus.success) {
-				res.status(400).send({ accepted: false, msg: acceptStatus.msg});
+			if (!acceptStatus.success) {
+				res.status(400).send({ accepted: false, msg: acceptStatus.msg });
 			} else {
 				notifyUserToUpdate(username);
-				res.status(200).send({accepted: true, msg: acceptStatus.msg});
+				res.status(200).send({ accepted: true, msg: acceptStatus.msg });
 			}
 		} else {
 			res.status(validationResult.status).json(validationResult.json);
@@ -223,28 +221,31 @@ app.post("/acceptjoinrequest", async (req, res) => {
 
 io.on("connection", (socket) => {
 	console.log(`socket ${socket.id} connected`);
-	let userData = {
-		userVerified: false
-	};
-	io.on("validate-token", async (jwt, callback) => {
+	socket.on("fetch-data", async (jwt, callback) => {
 		const validationResult = await validateToken(jwt);
-		if (validationResult.status === 200) {
-
-			userData.userVerified = false;
-			userData.username = validationResult.token.username;
-
-
-			callback({
-				valid: true,
-				msg: validationResult.msg,
-				userData: userData
-			});
+		let data;
+		if (validationResult.json.authorized) {
+			let userData = await getUser(getUserDocRef(db, validationResult.token.username));
+			if (userData === false) {
+				data = {
+					valid: false,
+					msg: "User does not exist",
+				};
+			} else {
+				delete userData.password;
+				data = {
+					valid: true,
+					msg: validationResult.json.msg,
+					userData: userData
+				};
+			}
 		} else {
-			callback({
+			data = {
 				valid: false,
-				msg: validationResult.msg
-			});
+				msg: validationResult.json.msg
+			};
 		}
+		callback(data);
 	});
 });
 

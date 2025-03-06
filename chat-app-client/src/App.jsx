@@ -4,7 +4,8 @@ import axios from 'axios'
 import io from 'socket.io-client';
 
 const socket = io('http://localhost:3000', {
-	transports: ['websocket']
+	transports: ['websocket'],
+	autoConnect: false
 });
 
 const Login = () => {
@@ -25,7 +26,7 @@ const Login = () => {
 	};
 }
 
-function LoginForm({setJWT}) {
+function LoginForm({ setJWT }) {
 	const [isLogin, setIsLogin] = useState(true);
 	const [errMsg, setErrMsg] = useState(null);
 	const username = useRef();
@@ -36,7 +37,7 @@ function LoginForm({setJWT}) {
 			<h3>{isLogin ? "Login" : "Signup"}</h3>
 			<p id="switch-auth-mode" onClick={() => { setIsLogin(!isLogin) }}>{isLogin ? "Create a new account" : "Sign into an existing account"}</p>
 			{errMsg === null ? <></> : <p id="login-err">{errMsg}</p>}
-			<input type="text" ref={username} valueplaceholder="username"></input>
+			<input type="text" ref={username} placeholder="username"></input>
 			<input type="password" ref={password} placeholder="password"></input>
 			<button onClick={async () => {
 				if (isLogin) {
@@ -71,24 +72,33 @@ function LoginForm({setJWT}) {
 	);
 }
 
-function ChatMessage({sender, text}) {
+// todo: a name and timestapm!!
+//aheaheahhaahhhhhhhhhghhhghghh help
+
+function ChatMessage({ sender, text }) {
 	return <div className="message">Message by {sender}: {text}</div>;
 }
 
-function ChatUI({JWT, changeAppState}) {
+function ChatUI({ JWT, changeAppState }) {
 	let msgList = [];
 	useEffect(() => {
-		socket.on("update", (data) => {
-			data.messages.forEach((msg) => {
-				
+		function updateNotifListener () {
+			socket.emit("fetch-data", JWT, (data) => {
+				console.log(data);
 			});
+		}
+		socket.on("update", updateNotifListener);
+		socket.emit("fetch-data", JWT, (data) => {
+			console.log(data);
 		});
-	})
-
+		return () => {
+			socket.off(updateNotifListener);
+		}
+	});
 	return (<>
 		<div className="chat-box">
 			<div className="message-display">
-				
+
 			</div>
 			<div className="input-background">
 				<input type="text" className="message-input" placeholder="Type a message here"></input>
@@ -103,11 +113,22 @@ function App() {
 	const [JWT, setJWT] = useState(localStorage.getItem("jwt"));
 	const [isInLoginState, changeAppState] = useState(JWT === null);
 
-	if(isInLoginState) {
+	useEffect(() => {
+		if (isInLoginState) {
+			socket.disconnect();
+		} else {
+			socket.connect();
+		}
+		return () => {
+			socket.disconnect();
+		};
+	}, [isInLoginState]);
+
+	if (isInLoginState) {
 		return <LoginForm setJWT={(newJWT) => {
 			localStorage.setItem("jwt", newJWT);
 			setJWT(newJWT);
-			if(newJWT !== null) {
+			if (newJWT !== null) {
 				changeAppState(false);
 			}
 		}}></LoginForm>
